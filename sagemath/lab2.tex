@@ -1,0 +1,172 @@
+\documentclass[14pt, a4paper]{extarticle}
+\usepackage[left=2.5cm, right=1.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[utf8x]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[english,russian]{babel}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[usenames]{color}
+
+\title{Лабораторная работа 2 по дисциплине Системы аналитических вычислений, задание 3}
+\author{Выполнил: Бирюков В.В., М8О-207Б-19}
+
+\usepackage{hyperref}
+\usepackage{sagetex}
+
+\setlength{\sagetexindent}{10ex}
+
+\renewcommand{\thesection}{\number\numexpr\value{section}-1\relax}
+\renewcommand{\thesubsection}{\thesection.\number\numexpr\value{subsection}-1\relax}
+\renewcommand{\thesubsubsection}{\thesubsection.\number\numexpr\value{subsubsection}-1\relax}
+
+\setcounter{secnumdepth}{1}
+\setcounter{section}{1}
+
+
+\begin{document}
+
+\section{Приведение уравнения поверхности второго рода к каноническому виду}
+
+\begin{sagesilent}
+    u(x, y, z) = 7*x^2 + 8*x*y + 3*y^2 + 8*x*z + 6*y*z + 3*z^2 + 6*x + y + 7
+\end{sagesilent}
+
+Уравнение поверхности второго порядка:
+$$\sage{u(x, y, z) == 0}$$
+
+\begin{sagesilent}
+    A = matrix([
+        [7, 4, 4],
+        [4, 3, 3],
+        [4, 3, 3]   
+    ])
+    B = vector([3, 0.5, 0])
+    a0 = 7
+\end{sagesilent}
+
+Матрица квадратичной формы:
+
+$A = \sage{A}$
+
+Вектор линейной формы:
+
+$B = \sage{B.n(digits=5)}$
+
+Свободный член: $a_0 = \sage{a0}$
+
+\begin{sagesilent}
+    # Характеристический многочлен
+    var('l', latex_name=r"\lambda")
+    char_poly = (A - matrix.identity(3) * l).det().simplify_full()
+\end{sagesilent}
+
+Составим характеристический многочлен.
+
+$$|A - \lambda * E| = \sage{char_poly}$$
+
+\begin{sagesilent}
+    # Собственные значения
+    eigenvalues = [i.rhs() for i in solve(char_poly == 0, l)]
+    eigenvalues.sort()
+\end{sagesilent}
+
+Найдем собственные значения -- корни характеристического многочлена.
+
+$\lambda_1 = \sage{eigenvalues[0].n(digits=5)}, \lambda_2 = \sage{eigenvalues[1].n(digits=5)}, \lambda_3 = \sage{eigenvalues[2].n(digits=5)}$
+
+\begin{sagesilent}
+    eigenvectors = list()
+    for i, ev in enumerate(eigenvalues, 1):
+        evect = vector(RR, *(A - matrix.identity(3) * ev).right_kernel().basis())
+        eigenvectors.append(evect)
+\end{sagesilent}
+
+Найдем собственные векторы.
+
+$s_1 = \sage{eigenvectors[0].n(digits=5)}$
+
+$s_2 = \sage{eigenvectors[1].n(digits=5)}$
+
+$s_3 = \sage{eigenvectors[2].n(digits=5)}$
+
+\begin{sagesilent}
+    S = list()
+    for ev in eigenvectors:
+        S.append(ev / sqrt(ev * ev))
+    S = matrix(S).T
+\end{sagesilent}
+
+Пронормируем собственные векторы и составим из них матрицу перехода.
+
+$S = \sage{S.n(digits=5)}$
+
+\begin{sagesilent}
+    # Диагональная матрица
+    A1 = S.T * A * S
+\end{sagesilent}
+
+Приведем матрицу квадратичной формы к диагональному виду.
+$$\Lambda = S^T * A * S = \sage{A1.n(digits=5)}$$
+
+\begin{sagesilent}
+    # Преобразование коэффициентов линейной формы
+    B1 = S.T * B
+\end{sagesilent}
+
+Преобразуем вектор линейной формы.
+
+$B' = S^T * B = \sage{B1.n(digits=5)}$
+
+\begin{sagesilent}
+    # Почти приведенное уравнение
+    v = a0
+    variables = [x, y, z]
+    for i in range(len(variables)):
+        v += A1[i][i] * variables[i] ^ 2 + 2 * B1[i] * variables[i]
+    show(v == 0)
+\end{sagesilent}
+
+Получим почти приведённое уравнение: $X \Lambda X^T + 2 B' X + a_0 = 0$
+
+$\sage{v == 0}$
+
+\begin{sagesilent}
+    # Приведенное уравнение
+    v = 0
+    a1 = a0
+
+    # Убираем линейные члены, приводя к полному квадрату, где это возможно
+    for i in range(len(variables)):
+        if A1[i][i] != 0:
+            v += A1[i][i] * (variables[i] + B1[i] / A1[i][i]) ^ 2
+            a1 -= B1[i] ^ 2 / A1[i][i]
+        else:
+            v += 2 * B1[i] * variables[i]
+
+    v = (v + a1) / a1
+\end{sagesilent}
+
+Сделаем замену переменных, получим каноническое уравнение.
+
+$\sage{v == 0}$
+
+\pagebreak
+
+График исходного уравнения
+
+$\sage{u(x,y,z) == 0}$
+
+\begin{center}
+    \sageplot[trim=100 100 100 100, clip, width=10cm][png]{implicit_plot3d(u, (x, -10, 10), (y, -20, 20), (z, -20, 20), plot_points=100).rotateZ(2.5*pi/6)}
+\end{center}
+
+График канонического уравнения
+
+$\sage{v == 0}$
+
+\begin{center}
+    \sageplot[trim=100 100 100 100, clip, width=10cm][png]{implicit_plot3d(v, (x, -20, 0), (y, -10, 10), (z, -10, 10), plot_points=100)}
+\end{center}
+
+\end{document}
